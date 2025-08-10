@@ -1,4 +1,4 @@
-#!/bin/bash
+""" #!/bin/bash
 
 # List of Pokémon
 POKEMONS=("bulbasaur" "ivysaur" "venusaur" "charmander" "charmeleon")
@@ -36,3 +36,32 @@ done
 # Wait for all parallel jobs to finish
 wait
 echo "All Pokémon data fetched! 🚀"
+"""
+
+#!/bin/bash
+
+POKEMONS=("bulbasaur" "ivysaur" "venusaur" "charmander" "charmeleon")
+OUTPUT_DIR="pokemon_data"
+mkdir -p "$OUTPUT_DIR"
+
+pids=()
+
+for POKEMON in "${POKEMONS[@]}"; do
+    {
+        echo "Fetching data for $POKEMON..."
+        curl -sL "https://pokeapi.co/api/v2/pokemon/$POKEMON" -o "$OUTPUT_DIR/$POKEMON.json" &&
+        echo "Saved $POKEMON ✅" ||
+        echo "Failed $POKEMON ❌"
+    } &
+    pids+=($!)  # store process ID
+done
+
+# Wait for all background processes
+for pid in "${pids[@]}"; do
+    if ! wait "$pid"; then
+        echo "Process $pid failed, killing..."
+        kill "$pid" 2>/dev/null
+    fi
+done
+
+echo "All fetches complete."
